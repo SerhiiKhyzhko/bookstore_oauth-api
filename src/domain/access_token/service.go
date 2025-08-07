@@ -42,7 +42,7 @@ func (s *service) GetById(accessTokenId string) (*AccessToken, *errors.RestErr) 
 }
 
 func (s *service) Create(at AccessToken) *errors.RestErr {
-	if err := at.Validate(); err != nil {
+	if err := at.ValidateAll(); err != nil {
 		return err
 	}
 
@@ -50,9 +50,8 @@ func (s *service) Create(at AccessToken) *errors.RestErr {
 }
 
 func (s *service) UpdateExpirationTime(at AccessToken) *errors.RestErr {
-	at.AccessToken = strings.TrimSpace(at.AccessToken)
-	if len(at.AccessToken) == 0 {
-		return errors.NewBadRequestError("invalid access token id")
+	if err := at.Validate(); err != nil {
+		return err
 	}
 
 	return s.repository.UpdateExpirationTime(at)

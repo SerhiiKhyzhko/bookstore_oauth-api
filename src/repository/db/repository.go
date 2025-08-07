@@ -9,8 +9,8 @@ import (
 
 const(
 	querryAccessToken = "SELECT access_token, user_id, client_id, expires FROM access_tokens WHERE access_token=?;"
-	querryCreateAccessToken = "INSERT INTO access_tokens(access_token, user_id, client_id, expiers) VALUES (?, ?, ?, ?);"
-	querryUpdate = "UPDATE access_tokens SET expire=? WHERE access_token=?;"
+	querryCreateAccessToken = "INSERT INTO access_tokens(access_token, user_id, client_id, expires) VALUES (?, ?, ?, ?);"
+	querryUpdate = "UPDATE access_tokens SET expires=? WHERE access_token=?;"
 ) 
 
 func NewRepository() DbRepository {
@@ -26,15 +26,9 @@ type DbRepository interface {
 type dbRepository struct {}
 
 func (r *dbRepository) GetById(id string) (*accesstoken.AccessToken, *errors.RestErr) {
-	session, err := cassandra.GetSession()
-	if err != nil {
-		return nil, errors.NewInternalServerError(err.Error())
-	}
-	defer session.Close()
-	
 	var result accesstoken.AccessToken
 
-	if err := session.Query(querryAccessToken, id).Scan(
+	if err := cassandra.GetSession().Query(querryAccessToken, id).Scan(
 		&result.AccessToken,
 		&result.UserId,
 		&result.ClientId,
@@ -50,13 +44,7 @@ func (r *dbRepository) GetById(id string) (*accesstoken.AccessToken, *errors.Res
 }
 
 func (r *dbRepository) Create(at accesstoken.AccessToken) *errors.RestErr {
-	session, err := cassandra.GetSession()
-	if err != nil {
-		return errors.NewInternalServerError(err.Error())
-	}
-	defer session.Close()
-
-	if err := session.Query(querryCreateAccessToken, at.AccessToken, at.UserId, at.ClientId, at.Expiers).Exec(); err != nil {
+	if err := cassandra.GetSession().Query(querryCreateAccessToken, at.AccessToken, at.UserId, at.ClientId, at.Expiers).Exec(); err != nil {
 		return errors.NewInternalServerError(err.Error())
 	}
 
@@ -64,13 +52,7 @@ func (r *dbRepository) Create(at accesstoken.AccessToken) *errors.RestErr {
 }
 
 func (r *dbRepository) UpdateExpirationTime(at accesstoken.AccessToken) *errors.RestErr {
-	session, err := cassandra.GetSession()
-	if err != nil {
-		return errors.NewInternalServerError(err.Error())
-	}
-	defer session.Close()
-
-	if err := session.Query(querryUpdate, at.Expiers, at.AccessToken).Exec(); err != nil {
+	if err := cassandra.GetSession().Query(querryUpdate, at.Expiers, at.AccessToken).Exec(); err != nil {
 		return errors.NewInternalServerError(err.Error())
 	}
 

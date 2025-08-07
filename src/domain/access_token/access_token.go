@@ -21,16 +21,23 @@ func(at AccessToken) Validate() *errors.RestErr{
 	if at.AccessToken == "" {
 		return errors.NewBadRequestError("invalid access token id")
 	}
+	if at.Expiers <= 0 {
+		return errors.NewBadRequestError("invalid expiration time")
+	}
+
+	return nil
+}
+
+func(at AccessToken) ValidateAll() *errors.RestErr{
+	at.AccessToken = strings.TrimSpace(at.AccessToken)
+	
+	at.Validate()
 	if at.UserId <= 0 {
 		return errors.NewBadRequestError("invalid user id")
 	}
 	if at.ClientId <= 0 {
 		return errors.NewBadRequestError("invalid client id")
 	}
-	if at.Expiers <= 0 {
-		return errors.NewBadRequestError("invalid expiration time")
-	}
-
 	return nil
 }
 
