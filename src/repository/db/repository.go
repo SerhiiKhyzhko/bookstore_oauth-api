@@ -32,7 +32,7 @@ func (r *dbRepository) GetById(id string) (*accesstoken.AccessToken, *errors.Res
 		&result.AccessToken,
 		&result.UserId,
 		&result.ClientId,
-		&result.Expiers,
+		&result.Expires,
 	); err != nil {
 		if err == gocql.ErrNotFound {
 			return nil, errors.NewNotFoundError("no access token found with given id")
@@ -44,7 +44,7 @@ func (r *dbRepository) GetById(id string) (*accesstoken.AccessToken, *errors.Res
 }
 
 func (r *dbRepository) Create(at accesstoken.AccessToken) *errors.RestErr {
-	if err := cassandra.GetSession().Query(querryCreateAccessToken, at.AccessToken, at.UserId, at.ClientId, at.Expiers).Exec(); err != nil {
+	if err := cassandra.GetSession().Query(querryCreateAccessToken, at.AccessToken, at.UserId, at.ClientId, at.Expires).Exec(); err != nil {
 		return errors.NewInternalServerError(err.Error())
 	}
 
@@ -52,7 +52,7 @@ func (r *dbRepository) Create(at accesstoken.AccessToken) *errors.RestErr {
 }
 
 func (r *dbRepository) UpdateExpirationTime(at accesstoken.AccessToken) *errors.RestErr {
-	if err := cassandra.GetSession().Query(querryUpdate, at.Expiers, at.AccessToken).Exec(); err != nil {
+	if err := cassandra.GetSession().Query(querryUpdate, at.Expires, at.AccessToken).Exec(); err != nil {
 		return errors.NewInternalServerError(err.Error())
 	}
 

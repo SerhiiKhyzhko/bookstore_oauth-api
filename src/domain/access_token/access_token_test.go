@@ -6,7 +6,7 @@ import (
 )
 
 func TestGetNewAccessToken(t *testing.T) {
-	at := GetAccessToken()
+	at := GetNewAccessToken(0)
 	if at.IsExpired() {
 		t.Error("brand new access token should not be expired")
 	}
@@ -25,7 +25,7 @@ func TestAccessTokenIsExpired(t *testing.T) {
 	if !at.IsExpired() {
 		t.Error("empty access token should be empty by default")
 
-		at.Expiers = time.Now().UTC().Add(3 * time.Hour).Unix()
+		at.Expires = time.Now().UTC().Add(3 * time.Hour).Unix()
 		if at.IsExpired() {
 			t.Error("access token expiring three hours from now should NOT be expired")
 		}

@@ -12,7 +12,7 @@ var usersRestClient = resty.New().
 	SetTimeout(150 * time.Millisecond)
 
 type RestUserRepository interface {
-	LoginUsesr(string, string) (*users.User, *errors.RestErr)
+	LoginUser(string, string) (*users.User, *errors.RestErr)
 }
 
 type usersRepository struct {}
@@ -21,7 +21,7 @@ func NewRepository() RestUserRepository {
 	return &usersRepository{}
 }
 
-func (u *usersRepository) LoginUsesr(email string, password string) (*users.User, *errors.RestErr) {
+func (u *usersRepository) LoginUser(email string, password string) (*users.User, *errors.RestErr) {
 	var user users.User
 	var responseErr errors.RestErr
 

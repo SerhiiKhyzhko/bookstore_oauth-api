@@ -45,7 +45,7 @@ func TestLoginUserTimeoutFromApi(t *testing.T) {
 	usersRestClient.SetTransport(clientTransport)
 
 	repository := usersRepository{}
-	response, err := repository.LoginUsesr("test@gmail.com", "test")
+	response, err := repository.LoginUser("test@gmail.com", "test")
 
 	assert.Nil(t, response)
 	assert.NotNil(t, err)
@@ -57,7 +57,7 @@ func TestLoginUserNetworkError(t *testing.T) {
 	gock.DisableNetworking()
 
 	repository := usersRepository{}
-	response, err := repository.LoginUsesr("test@gmail.com", "test")
+	response, err := repository.LoginUser("test@gmail.com", "test")
 
 	assert.Nil(t, response)
 	assert.NotNil(t, err)
@@ -77,7 +77,7 @@ func TestLoginUserInvalidLoginCredentials(t *testing.T) {
 		})
 
 	repository := usersRepository{}
-	response, err := repository.LoginUsesr("test@gmail.com", "test")
+	response, err := repository.LoginUser("test@gmail.com", "test")
 
 
 	assert.Nil(t, response)
@@ -100,7 +100,7 @@ func TestLoginUserNoError(t *testing.T) {
 		})
 
 	repository := usersRepository{}
-	user, err := repository.LoginUsesr("test@gmail.com", "test")
+	user, err := repository.LoginUser("test@gmail.com", "test")
 
 
 	assert.Nil(t, err)

@@ -3,7 +3,8 @@ package http
 import (
 	"net/http"
 
-	"github.com/SerhiiKhyzhko/bookstore_oauth-api/src/domain/access_token"
+	atDomain "github.com/SerhiiKhyzhko/bookstore_oauth-api/src/domain/access_token"
+	"github.com/SerhiiKhyzhko/bookstore_oauth-api/src/services/access_token"
 	"github.com/SerhiiKhyzhko/bookstore_oauth-api/src/utils/errors"
 	"github.com/gin-gonic/gin"
 )
@@ -36,23 +37,24 @@ func (handler * accesstokenHandler) GetById(c *gin.Context) {
 }
 
 func (handler * accesstokenHandler) Create(c *gin.Context) {
-	var at accesstoken.AccessToken
-	if err := c.ShouldBindJSON(&at); err != nil {
+	var request atDomain.AccessTokenRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
 		restErr := errors.NewBadRequestError("invalid jsoon body")
 		c.JSON(restErr.Status, restErr)
 		return
 	}
 
-	if err := handler.service.Create(at); err != nil {
+	accessToken, err := handler.service.Create(request)
+	if err != nil {
 		c.JSON(err.Status, err)
 		return
 	}
 	
-	c.JSON(http.StatusCreated, at)
+	c.JSON(http.StatusCreated, accessToken)
 }
 
 func (handler * accesstokenHandler) UpdateExpirationTime(c *gin.Context) {
-	var at accesstoken.AccessToken
+	var at atDomain.AccessToken
 	if err := c.ShouldBindJSON(&at); err != nil {
 		restErr := errors.NewBadRequestError("invalid jsoon body")
 		c.JSON(restErr.Status, restErr)
