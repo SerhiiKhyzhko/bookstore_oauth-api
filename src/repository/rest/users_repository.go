@@ -34,7 +34,7 @@ func (u *usersRepository) LoginUser(email string, password string) (*users.User,
 	SetBody(request).
 	SetResult(&user).
 	SetError(&responseErr).
-	Post("https://api.bookstore.com/users/login")
+	Post("https://localhost:8081")
 
 	if err != nil {
 		return nil, errors.NewInternalServerError(err.Error())//posibly network or timeout error
