@@ -1,79 +1,84 @@
 package accesstoken
 
 import (
+	"context"
+	"fmt"
 	"strings"
+	"time"
 
-	"github.com/SerhiiKhyzhko/bookstore_oauth-api/src/domain/access_token"
-	"github.com/SerhiiKhyzhko/bookstore_oauth-api/src/repository/rest"
-	"github.com/SerhiiKhyzhko/bookstore_oauth-api/src/repository/db"
-	"github.com/SerhiiKhyzhko/bookstore_oauth-api/src/utils/errors"
+	accesstoken "github.com/SerhiiKhyzhko/bookstore_oauth-api/src/domain/access_token"
+	atrepository "github.com/SerhiiKhyzhko/bookstore_oauth-api/src/domain/at_repository"
+	"github.com/SerhiiKhyzhko/bookstore_oauth-api/src/oauth_errors"
 )
 
-type Repository interface {
-	GetById(string) (*accesstoken.AccessToken, *errors.RestErr)
-	Create(accesstoken.AccessToken) *errors.RestErr
-	UpdateExpirationTime(accesstoken.AccessToken) *errors.RestErr
+type Service interface {
+	GetById(context.Context, string) (*accesstoken.AccessToken, error)
+	Create(context.Context, accesstoken.AccessTokenRequest) (*accesstoken.AccessToken, error)
+	UpdateExpirationTime(context.Context, accesstoken.AccessToken) error
 }
 
-type Service interface {
-	GetById(string) (*accesstoken.AccessToken, *errors.RestErr)
-	Create(accesstoken.AccessTokenRequest) (*accesstoken.AccessToken, *errors.RestErr)
-	UpdateExpirationTime(accesstoken.AccessToken) *errors.RestErr
+type RestUserClient interface {
+	LoginUser(string, string) (int64, error)
 }
 
 type service struct {
-	restUsersRepo rest.RestUserRepository
-	dbRepo        db.DbRepository
+	restUsersClient RestUserClient
+	dbRepo          atrepository.DbRepository
+	ctxTimeout      time.Duration
 }
 
-func NewService(usersRepo rest.RestUserRepository, dbRepo db.DbRepository) Service {
+func NewService(usersClient RestUserClient, dbRepo atrepository.DbRepository, timeout time.Duration) Service {
 	return &service{
-		restUsersRepo: usersRepo,
-		dbRepo:        dbRepo,
+		restUsersClient: usersClient,
+		dbRepo:          dbRepo,
+		ctxTimeout:      timeout,
 	}
 }
 
-func (s *service) GetById(accessTokenId string) (*accesstoken.AccessToken, *errors.RestErr) {
+func (s *service) GetById(ctx context.Context, accessTokenId string) (*accesstoken.AccessToken, error) {
 	accessTokenId = strings.TrimSpace(accessTokenId)
 	if len(accessTokenId) == 0 {
-		return nil, errors.NewBadRequestError("invalid access token id")
+		return nil, fmt.Errorf("%w: invalid access token id",  oauth_errors.BadRequestErr)
 	}
+	ctx, cancel := context.WithTimeout(ctx, s.ctxTimeout)
+	defer cancel()
 
-	accessToken, err := s.dbRepo.GetById(accessTokenId)
+	accessToken, err := s.dbRepo.GetById(ctx, accessTokenId)
 	if err != nil {
 		return nil, err
 	}
 	return accessToken, nil
 }
 
-func (s *service) Create(request accesstoken.AccessTokenRequest) (*accesstoken.AccessToken, *errors.RestErr) {
+func (s *service) Create(ctx context.Context, request accesstoken.AccessTokenRequest) (*accesstoken.AccessToken, error) {
 	if err := request.Validate(); err != nil {
 		return nil, err
 	}
+	ctx, cancel := context.WithTimeout(ctx, s.ctxTimeout)
+	defer cancel()
 
-	//TODO: Support both grant types: client_credentials and password
+	//TODO: Support both grant types: client_credentials
 
-	// Authenticate the user against the Users API:
-	user, err := s.restUsersRepo.LoginUser(request.Username, request.Password)
+	id, err := s.restUsersClient.LoginUser(request.Username, request.Password)
 	if err != nil {
 		return nil, err
 	}
 
-	// Generate a new access token:
-	at := accesstoken.GetNewAccessToken(user.Id)
+	at := accesstoken.GetNewAccessToken(id)
 	at.Generate()
 
-	// Save the new access token in Cassandra:
-	if err := s.dbRepo.Create(at); err != nil {
+	if err := s.dbRepo.Create(ctx, at); err != nil {
 		return nil, err
 	}
 	return &at, nil
 }
 
-func (s *service) UpdateExpirationTime(at accesstoken.AccessToken) *errors.RestErr {
+func (s *service) UpdateExpirationTime(ctx context.Context, at accesstoken.AccessToken) error {
 	if err := at.Validate(); err != nil {
 		return err
 	}
+	ctx, cancel := context.WithTimeout(ctx, s.ctxTimeout)
+	defer cancel()
 
-	return s.dbRepo.UpdateExpirationTime(at)
+	return s.dbRepo.UpdateExpirationTime(ctx, at)
 }

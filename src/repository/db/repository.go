@@ -1,59 +1,66 @@
 package db
 
 import (
-	"github.com/SerhiiKhyzhko/bookstore_oauth-api/src/clients/cassandra"
+	"context"
+	"fmt"
+
 	"github.com/SerhiiKhyzhko/bookstore_oauth-api/src/domain/access_token"
-	"github.com/SerhiiKhyzhko/bookstore_oauth-api/src/utils/errors"
+	atrepository "github.com/SerhiiKhyzhko/bookstore_oauth-api/src/domain/at_repository"
+	"github.com/SerhiiKhyzhko/bookstore_oauth-api/src/oauth_errors"
+	"github.com/SerhiiKhyzhko/bookstore_utils-go/logger"
 	"github.com/gocql/gocql"
 )
 
-const(
-	querryAccessToken = "SELECT access_token, user_id, client_id, expires FROM access_tokens WHERE access_token=?;"
+const (
+	querryAccessToken       = "SELECT access_token, user_id, client_id, expires FROM access_tokens WHERE access_token=?;"
 	querryCreateAccessToken = "INSERT INTO access_tokens(access_token, user_id, client_id, expires) VALUES (?, ?, ?, ?);"
-	querryUpdate = "UPDATE access_tokens SET expires=? WHERE access_token=?;"
-) 
+	querryUpdate            = "UPDATE access_tokens SET expires=? WHERE access_token=?;"
+)
 
-func NewRepository() DbRepository {
-	return &dbRepository{}
+func NewRepository(cSession *gocql.Session, logger *logger.Logger) atrepository.DbRepository {
+	return &dbRepository{
+		session: cSession,
+		logger:  logger,
+	}
 }
 
-type DbRepository interface {
-	GetById(string) (*accesstoken.AccessToken, *errors.RestErr)
-	Create(accesstoken.AccessToken) *errors.RestErr
-	UpdateExpirationTime(accesstoken.AccessToken) *errors.RestErr
+type dbRepository struct {
+	session *gocql.Session
+	logger  *logger.Logger
 }
 
-type dbRepository struct {}
-
-func (r *dbRepository) GetById(id string) (*accesstoken.AccessToken, *errors.RestErr) {
+func (r *dbRepository) GetById(ctx context.Context, id string) (*accesstoken.AccessToken, error) {
 	var result accesstoken.AccessToken
 
-	if err := cassandra.GetSession().Query(querryAccessToken, id).Scan(
+	if err := r.session.Query(querryAccessToken, id).WithContext(ctx).Scan(
 		&result.AccessToken,
 		&result.UserId,
 		&result.ClientId,
 		&result.Expires,
 	); err != nil {
 		if err == gocql.ErrNotFound {
-			return nil, errors.NewNotFoundError("no access token found with given id")
+			return nil, fmt.Errorf("%w: no access token found with given id", oauth_errors.NotFoundErr)
 		}
-		return nil, errors.NewInternalServerError(err.Error())
+		r.logger.Error("Request failed", err)
+		return nil, oauth_errors.InternalServerErr
 	}
 
 	return &result, nil
 }
 
-func (r *dbRepository) Create(at accesstoken.AccessToken) *errors.RestErr {
-	if err := cassandra.GetSession().Query(querryCreateAccessToken, at.AccessToken, at.UserId, at.ClientId, at.Expires).Exec(); err != nil {
-		return errors.NewInternalServerError(err.Error())
+func (r *dbRepository) Create(ctx context.Context, at accesstoken.AccessToken) error {
+	if err := r.session.Query(querryCreateAccessToken, at.AccessToken, at.UserId, at.ClientId, at.Expires).WithContext(ctx).Exec(); err != nil {
+		r.logger.Error(fmt.Sprintf("Error when trying to create new token: %v", at), err)
+		return oauth_errors.InternalServerErr
 	}
 
 	return nil
 }
 
-func (r *dbRepository) UpdateExpirationTime(at accesstoken.AccessToken) *errors.RestErr {
-	if err := cassandra.GetSession().Query(querryUpdate, at.Expires, at.AccessToken).Exec(); err != nil {
-		return errors.NewInternalServerError(err.Error())
+func (r *dbRepository) UpdateExpirationTime(ctx context.Context, at accesstoken.AccessToken) error {
+	if err := r.session.Query(querryUpdate, at.Expires, at.AccessToken).WithContext(ctx).Exec(); err != nil {
+		r.logger.Error(fmt.Sprintf("Error when trying to update new token: %v", at), err)
+		return oauth_errors.InternalServerErr
 	}
 
 	return nil

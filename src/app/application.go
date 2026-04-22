@@ -1,22 +1,13 @@
 package app
 
 import (
-	"github.com/SerhiiKhyzhko/bookstore_oauth-api/src/http"
-	"github.com/SerhiiKhyzhko/bookstore_oauth-api/src/repository/db"
-	"github.com/SerhiiKhyzhko/bookstore_oauth-api/src/repository/rest"
-	"github.com/SerhiiKhyzhko/bookstore_oauth-api/src/services/access_token"
+	"github.com/SerhiiKhyzhko/bookstore_oauth-api/src/controllers"
 	"github.com/gin-gonic/gin"
 )
 
-var router = gin.Default()
+func StartApplication(port string, oauthCtrl *controllers.AccessTokenHandler) {
+	router := gin.Default()
+	urlMapping(router, oauthCtrl)
 
-func StartApplication() {
-	atService := accesstoken.NewService(rest.NewRepository(), db.NewRepository())
-	atHendler := http.NewHandler(atService)
-
-	router.GET("/oauth/access_token/:access_token_id", atHendler.GetById)
-	router.POST("/oauth/access_token", atHendler.Create)
-	router.PATCH("/oauth/access_token/:access_token_id", atHendler.UpdateExpirationTime)
-
-	router.Run(":8080")
+	router.Run(port)
 }

@@ -1,29 +1,28 @@
 package cassandra
 
 import (
-	"os"
+	"strings"
 
 	"github.com/gocql/gocql"
-	"github.com/joho/godotenv"
 )
 
-var session *gocql.Session
-
-func init() {
-	err := godotenv.Load()
-	if err != nil {
-		panic(err)
+func NewSession(dbHost string, keyspace string, consistency string) (*gocql.Session, error) {
+	cluster := gocql.NewCluster(dbHost)
+	cluster.Keyspace = keyspace
+	switch strings.ToLower(consistency) {
+	case "any":
+		cluster.Consistency = gocql.Any
+	case "one":
+		cluster.Consistency = gocql.One
+	case "all":
+		cluster.Consistency = gocql.All
+	default:
+		cluster.Consistency = gocql.Quorum
 	}
 
-	cluster := gocql.NewCluster(os.Getenv("DB_HOST"))
-	cluster.Keyspace = "oauth"
-	cluster.Consistency = gocql.Quorum
-
-	if session, err = cluster.CreateSession(); err != nil {
-		panic(err)
-	} 
-}
-
-func GetSession() *gocql.Session {
-	return session
+	session, err := cluster.CreateSession()
+	if err != nil {
+		return nil, err
+	}
+	return session, nil
 }
