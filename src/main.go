@@ -29,6 +29,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error creating logger: %v", err)
 	}
+	defer logger.Sync()
 
 	cSession, err := cassandra.NewSession(cfg.Db.Host, cfg.Db.Keyspace, cfg.Db.Consistency)
 	if err != nil {
