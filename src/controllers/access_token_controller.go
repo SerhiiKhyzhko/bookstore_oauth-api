@@ -6,7 +6,7 @@ import (
 
 	atDomain "github.com/SerhiiKhyzhko/bookstore_oauth-api/src/domain/access_token"
 	"github.com/SerhiiKhyzhko/bookstore_oauth-api/src/oauth_errors"
-	"github.com/SerhiiKhyzhko/bookstore_oauth-api/src/services/access_token"
+	accesstoken "github.com/SerhiiKhyzhko/bookstore_oauth-api/src/services/access_token"
 	"github.com/SerhiiKhyzhko/bookstore_utils-go/rest_errors"
 	"github.com/gin-gonic/gin"
 )
@@ -32,6 +32,15 @@ func requestError(reqErr error) rest_errors.RestErr {
 	}
 }
 
+// @Summary     Get access token by its id
+// @Tags        access token
+// @Description Return access token using access_token_id obtained via URL
+// @Produce     json
+// @Param       access_token_id  path      string  true  "Access Token ID"
+// @Success     200 {object} atDomain.AccessToken
+// @Failure     404 {object} oauth_errors.SwaggerRestErr
+// @Failure     500 {object} oauth_errors.SwaggerRestErr
+// @Router      /oauth/access_token/{access_token_id} [get]
 func (handler *AccessTokenHandler) GetById(c *gin.Context) {
 	accessTokenId := c.Param("access_token_id")
 	ctx := c.Request.Context()
@@ -45,6 +54,16 @@ func (handler *AccessTokenHandler) GetById(c *gin.Context) {
 	c.JSON(http.StatusOK, accessToken)
 }
 
+// @Summary     Create new access token
+// @Tags        access token
+// @Description Generate and return new access token with provided information
+// @Accept      json
+// @Produce     json
+// @Param       request body atDomain.AccessTokenRequest true "Access Token Request"
+// @Success     201 {object} atDomain.AccessToken
+// @Failure     400 {object} oauth_errors.SwaggerRestErr
+// @Failure     500 {object} oauth_errors.SwaggerRestErr
+// @Router      /oauth/access_token [post]
 func (handler *AccessTokenHandler) Create(c *gin.Context) {
 	var request atDomain.AccessTokenRequest
 	ctx := c.Request.Context()
@@ -64,6 +83,18 @@ func (handler *AccessTokenHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, accessToken)
 }
 
+// @Summary     Update given access token
+// @Tags        access token
+// @Description Set new expiration time, update db and return updated access token
+// @Accept      json
+// @Produce     json
+// @Param       access_token_id path string true "Access Token ID"
+// @Param       at body atDomain.AccessToken true "Access Token"
+// @Success     200 {object} atDomain.AccessToken
+// @Failure     400 {object} oauth_errors.SwaggerRestErr
+// @Failure     404 {object} oauth_errors.SwaggerRestErr
+// @Failure     500 {object} oauth_errors.SwaggerRestErr
+// @Router      /oauth/access_token/{access_token_id} [patch]
 func (handler *AccessTokenHandler) UpdateExpirationTime(c *gin.Context) {
 	var at atDomain.AccessToken
 	ctx := c.Request.Context()

@@ -1,0 +1,210 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "contact": {}
+    },
+    "paths": {
+        "/oauth/access_token": {
+            "post": {
+                "description": "Generate and return new access token with provided information",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "access token"
+                ],
+                "summary": "Create new access token",
+                "parameters": [
+                    {
+                        "description": "Access Token Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/accesstoken.AccessTokenRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/accesstoken.AccessToken"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/oauth_errors.SwaggerRestErr"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/oauth_errors.SwaggerRestErr"
+                        }
+                    }
+                }
+            }
+        },
+        "/oauth/access_token/{access_token_id}": {
+            "get": {
+                "description": "Return access token using access_token_id obtained via URL",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "access token"
+                ],
+                "summary": "Get access token by its id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Access Token ID",
+                        "name": "access_token_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/accesstoken.AccessToken"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/oauth_errors.SwaggerRestErr"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/oauth_errors.SwaggerRestErr"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "Set new expiration time, update db and return updated access token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "access token"
+                ],
+                "summary": "Update given access token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Access Token ID",
+                        "name": "access_token_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Access Token",
+                        "name": "at",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/accesstoken.AccessToken"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/accesstoken.AccessToken"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/oauth_errors.SwaggerRestErr"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/oauth_errors.SwaggerRestErr"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/oauth_errors.SwaggerRestErr"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "accesstoken.AccessToken": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "client_id": {
+                    "type": "integer"
+                },
+                "expires": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "accesstoken.AccessTokenRequest": {
+            "type": "object",
+            "properties": {
+                "client_id": {
+                    "description": "used for client credentials grant type",
+                    "type": "string"
+                },
+                "client_secret": {
+                    "type": "string"
+                },
+                "grant_type": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "scope": {
+                    "type": "string"
+                },
+                "username": {
+                    "description": "used for password grant type",
+                    "type": "string"
+                }
+            }
+        },
+        "oauth_errors.SwaggerRestErr": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                }
+            }
+        }
+    }
+}
