@@ -13,7 +13,7 @@ type TokenClaims struct {
 }
 
 func (tc TokenClaims) Validate() error {
-	if tc.TokenType != claimsAccess && tc.TokenType != claimsRefresh {
+	if tc.TokenType != ClaimsAccess && tc.TokenType != ClaimsRefresh {
 		return fmt.Errorf("Invalid token type - %s", tc.TokenType)
 	}
 

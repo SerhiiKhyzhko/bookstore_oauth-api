@@ -9,7 +9,7 @@ import (
 
 type Config struct {
 	App    appConfig
-	Db     dbConfig
+	Jwt    jwtConfig
 	Logger loggerConfig
 }
 
@@ -20,10 +20,10 @@ type appConfig struct {
 	CtxTimeout   time.Duration
 }
 
-type dbConfig struct {
-	Host        string
-	Keyspace    string
-	Consistency string
+type jwtConfig struct {
+	SignKey           string
+	AccessExpiration  time.Duration
+	RefreshExpiration time.Duration
 }
 
 type loggerConfig struct {
@@ -40,12 +40,12 @@ func loadApp() appConfig {
 	return app
 }
 
-func loadDb() dbConfig {
-	db := dbConfig{}
-	db.Host = getRequiredEnv("DB_HOST")
-	db.Keyspace = getRequiredEnv("KEYSPACE")
-	db.Consistency = getEnvWithDefault("CONSISTENCY", "Quorum")
-	return db
+func loadJwt() jwtConfig {
+	jwt := jwtConfig{}
+	jwt.AccessExpiration = getTimeWithDefault("ACCESS_EXPIRATION", "15m")
+	jwt.RefreshExpiration = getTimeWithDefault("REFRESH_EXPIRATION", "24h")
+	jwt.SignKey = getRequiredEnv("SIGN_KEY")
+	return jwt
 }
 
 func loadLogger() loggerConfig {
@@ -59,14 +59,6 @@ func getRequiredEnv(key string) string {
 	value, exists := os.LookupEnv(key)
 	if !exists || value == "" {
 		log.Fatalf("Critical environment variable %s is missing", key)
-	}
-	return value
-}
-
-func getEnvWithDefault(key string, defaultValue string) string {
-	value, exists := os.LookupEnv(key)
-	if !exists || value == "" {
-		return defaultValue
 	}
 	return value
 }
@@ -102,7 +94,7 @@ func getTimeWithDefault(key string, defaultValue string) time.Duration {
 func Load() Config {
 	cfg := Config{}
 	cfg.App = loadApp()
-	cfg.Db = loadDb()
+	cfg.Jwt = loadJwt()
 	cfg.Logger = loadLogger()
 	return cfg
 }

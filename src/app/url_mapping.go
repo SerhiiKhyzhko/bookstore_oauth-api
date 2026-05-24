@@ -8,8 +8,8 @@ import (
 )
 
 func urlMapping(router *gin.Engine, oauthCtrl *controllers.AccessTokenHandler) {
-	router.GET("/oauth/access_token/:access_token_id", oauthCtrl.GetById)
-	router.POST("/oauth/access_token", oauthCtrl.Create)
-	router.PATCH("/oauth/access_token/:access_token_id", oauthCtrl.UpdateExpirationTime)
+	router.POST("/oauth/create", oauthCtrl.Create)
+	router.POST("/oauth/refresh", oauthCtrl.RefreshToken)
+	router.POST("/oauth/verify", oauthCtrl.VerifyToken)
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 }

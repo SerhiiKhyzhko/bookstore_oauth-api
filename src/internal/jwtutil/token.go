@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	claimsRefresh = "refresh"
-	claimsAccess  = "access"
-	issuer        = "bookstore-oauth-api"
+	ClaimsRefresh = "refresh"
+	ClaimsAccess  = "access"
+	Issuer        = "bookstore-oauth-api"
 )
 const (
 	charset        = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -50,7 +50,7 @@ func (j *JwtManager) generateToken(userId int64, tokenType string, exp time.Dura
 		UserId:    userId,
 		TokenType: tokenType,
 		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    issuer,
+			Issuer:    Issuer,
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(exp)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
@@ -67,11 +67,11 @@ func (j *JwtManager) generateToken(userId int64, tokenType string, exp time.Dura
 }
 
 func (j *JwtManager) GenerateAccessToken(userId int64) (string, error) {
-	return j.generateToken(userId, claimsAccess, j.accessExp)
+	return j.generateToken(userId, ClaimsAccess, j.accessExp)
 }
 
 func (j *JwtManager) GenerateRefreshToken(userId int64) (string, error) {
-	return j.generateToken(userId, claimsRefresh, j.refreshExp)
+	return j.generateToken(userId, ClaimsRefresh, j.refreshExp)
 }
 
 func (j *JwtManager) VerifyToken(tokenString string) (*TokenClaims, error) {
@@ -100,7 +100,7 @@ func (j *JwtManager) VerifyToken(tokenString string) (*TokenClaims, error) {
 	}
 
 	if !token.Valid {
-    	return nil, fmt.Errorf("%w: invalid token", oauth_errors.UnauthorizedErr)
+		return nil, fmt.Errorf("%w: invalid token", oauth_errors.UnauthorizedErr)
 	}
 
 	return &claims, nil

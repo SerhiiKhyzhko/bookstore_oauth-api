@@ -1,11 +1,12 @@
 package users
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/SerhiiKhyzhko/bookstore_oauth-api/src/oauth_errors"
-	accesstoken "github.com/SerhiiKhyzhko/bookstore_oauth-api/src/services/access_token"
+	servicetoken "github.com/SerhiiKhyzhko/bookstore_oauth-api/src/services/token_service"
 	"github.com/SerhiiKhyzhko/bookstore_utils-go/logger"
 	"github.com/SerhiiKhyzhko/bookstore_utils-go/rest_errors"
 	"github.com/go-resty/resty/v2"
@@ -17,7 +18,7 @@ type usersClient struct {
 	apiBaseUrl string
 }
 
-func NewClient(client *resty.Client, logger *logger.Logger, url string) accesstoken.RestUserClient {
+func NewClient(client *resty.Client, logger *logger.Logger, url string) servicetoken.RestUserClient {
 	return &usersClient{
 		restClient: client,
 		logger:     logger,
@@ -25,7 +26,7 @@ func NewClient(client *resty.Client, logger *logger.Logger, url string) accessto
 	}
 }
 
-func (u *usersClient) LoginUser(email string, password string) (int64, error) {
+func (u *usersClient) LoginUser(ctx context.Context, email string, password string) (int64, error) {
 	var user User
 	var responseErr rest_errors.RestErr
 
@@ -35,6 +36,7 @@ func (u *usersClient) LoginUser(email string, password string) (int64, error) {
 	}
 
 	response, err := u.restClient.R().
+		SetContext(ctx).
 		SetBody(request).
 		SetResult(&user).
 		SetError(&responseErr).
