@@ -31,7 +31,7 @@ func main() {
 	defer logger.Sync()
 
 	jwtManager := jwtutil.NewJwtManager(cfg.Jwt.SignKey, cfg.Jwt.AccessExpiration, cfg.Jwt.RefreshExpiration, logger)
-	restyClient := users.NewRestyClient(cfg.App.RestyReqTime)
+	restyClient := users.NewRestyClient()
 	usersClient := users.NewClient(restyClient, logger, cfg.App.ApiBaseUrl)
 	atService := tokenservice.NewService(usersClient, jwtManager)
 	handler := controllers.NewHandler(atService, cfg.App.CtxTimeout)

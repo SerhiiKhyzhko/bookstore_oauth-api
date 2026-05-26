@@ -7,4 +7,5 @@ var (
 	BadRequestErr     = errors.New("bad request")
 	InternalServerErr = errors.New("internal server error")
 	UnauthorizedErr   = errors.New("unauthorized")
+	RequestTimeoutErr = errors.New("request timeout")
 )

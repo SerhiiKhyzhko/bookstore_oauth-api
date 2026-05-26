@@ -5,7 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func StartApplication(port string, oauthCtrl *controllers.AccessTokenHandler) {
+func StartApplication(port string, oauthCtrl *controllers.TokenHandler) {
 	router := gin.Default()
 	urlMapping(router, oauthCtrl)
 

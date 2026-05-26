@@ -36,7 +36,7 @@ func (s *service) Create(ctx context.Context, request token.TokenRequest) (*toke
 		return nil, err
 	}
 
-	id, err := s.restUsersClient.LoginUser(ctx, request.Username, request.Password)
+	id, err := s.restUsersClient.LoginUser(ctx, request.UserEmail, request.Password)
 	if err != nil {
 		return nil, err
 	}

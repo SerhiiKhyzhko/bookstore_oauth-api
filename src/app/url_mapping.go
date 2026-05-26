@@ -7,7 +7,7 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-func urlMapping(router *gin.Engine, oauthCtrl *controllers.AccessTokenHandler) {
+func urlMapping(router *gin.Engine, oauthCtrl *controllers.TokenHandler) {
 	router.POST("/oauth/create", oauthCtrl.Create)
 	router.POST("/oauth/refresh", oauthCtrl.RefreshToken)
 	router.POST("/oauth/verify", oauthCtrl.VerifyToken)

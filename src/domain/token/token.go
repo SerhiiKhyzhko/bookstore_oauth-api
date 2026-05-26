@@ -10,12 +10,12 @@ type TokenRequest struct {
 	Scope string `json:"scope"`
 
 	//used for password grant type
-	Username string `json:"username"`
+	UserEmail string `json:"user_email"`
 	Password string `json:"password"`
 }
 
 func (at *TokenRequest) Validate() error {
-	if at.Username == "" || at.Password == "" {
+	if at.UserEmail == "" || at.Password == "" {
 		return fmt.Errorf("%w: invalid username or password", oauth_errors.BadRequestErr)
 	}
 	return nil
