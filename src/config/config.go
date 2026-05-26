@@ -15,7 +15,6 @@ type Config struct {
 
 type appConfig struct {
 	GinPort      string
-	RestyReqTime int
 	ApiBaseUrl   string
 	CtxTimeout   time.Duration
 }
@@ -34,7 +33,6 @@ type loggerConfig struct {
 func loadApp() appConfig {
 	app := appConfig{}
 	app.GinPort = getRequiredEnv("GIN_PORT")
-	app.RestyReqTime = getIntWithDefault("RESTY_REQUEST_TIME", 150)
 	app.ApiBaseUrl = getRequiredEnv("USERS_API_BASE_URL")
 	app.CtxTimeout = getTimeWithDefault("CTX_TIMEOUT", "2s")
 	return app

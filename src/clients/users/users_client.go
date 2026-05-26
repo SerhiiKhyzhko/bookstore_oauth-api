@@ -2,13 +2,13 @@ package users
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/SerhiiKhyzhko/bookstore_oauth-api/src/oauth_errors"
 	servicetoken "github.com/SerhiiKhyzhko/bookstore_oauth-api/src/services/token_service"
 	"github.com/SerhiiKhyzhko/bookstore_utils-go/logger"
-	"github.com/SerhiiKhyzhko/bookstore_utils-go/rest_errors"
 	"github.com/go-resty/resty/v2"
 )
 
@@ -28,7 +28,7 @@ func NewClient(client *resty.Client, logger *logger.Logger, url string) servicet
 
 func (u *usersClient) LoginUser(ctx context.Context, email string, password string) (int64, error) {
 	var user User
-	var responseErr rest_errors.RestErr
+	var responseErr restErrResponse
 
 	request := UserLoginRequest{
 		Email:    email,
@@ -44,14 +44,17 @@ func (u *usersClient) LoginUser(ctx context.Context, email string, password stri
 
 	if err != nil {
 		u.logger.Error("request failed", err)
+		if errors.Is(err, context.DeadlineExceeded) {
+			return 0, oauth_errors.RequestTimeoutErr
+		}
 		return 0, oauth_errors.InternalServerErr
 	}
 
 	if response.IsError() {
-		if responseErr.Status() == http.StatusNotFound {
-			return 0, fmt.Errorf("%w: %s", oauth_errors.NotFoundErr, responseErr.Message())
+		if responseErr.Status == http.StatusNotFound {
+			return 0, fmt.Errorf("%w: %s", oauth_errors.NotFoundErr, responseErr.Message)
 		} else {
-			return 0, fmt.Errorf("%w: %s", oauth_errors.InternalServerErr, responseErr.Message())
+			return 0, fmt.Errorf("%w: %s", oauth_errors.InternalServerErr, responseErr.Message)
 		}
 	}
 

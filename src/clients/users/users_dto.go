@@ -11,3 +11,9 @@ type UserLoginRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
+
+type restErrResponse struct {
+    Message string `json:"message"`
+    Status  int    `json:"status"`
+    Error   string `json:"error"`
+}
