@@ -3,13 +3,13 @@ package main
 import (
 	"log"
 
-	"github.com/SerhiiKhyzhko/bookstore_oauth-api/src/app"
-	"github.com/SerhiiKhyzhko/bookstore_oauth-api/src/clients/users"
-	"github.com/SerhiiKhyzhko/bookstore_oauth-api/src/config"
-	"github.com/SerhiiKhyzhko/bookstore_oauth-api/src/controllers"
-	_ "github.com/SerhiiKhyzhko/bookstore_oauth-api/src/docs"
-	"github.com/SerhiiKhyzhko/bookstore_oauth-api/src/internal/jwtutil"
-	tokenservice "github.com/SerhiiKhyzhko/bookstore_oauth-api/src/services/token_service"
+	"github.com/SerhiiKhyzhko/bookstore_oauth-api/v2/src/app"
+	"github.com/SerhiiKhyzhko/bookstore_oauth-api/v2/src/clients/users"
+	"github.com/SerhiiKhyzhko/bookstore_oauth-api/v2/src/config"
+	"github.com/SerhiiKhyzhko/bookstore_oauth-api/v2/src/controllers"
+	_ "github.com/SerhiiKhyzhko/bookstore_oauth-api/v2/src/docs"
+	"github.com/SerhiiKhyzhko/bookstore_oauth-api/v2/src/internal/jwtutil"
+	tokenservice "github.com/SerhiiKhyzhko/bookstore_oauth-api/v2/src/services/token_service"
 	"github.com/SerhiiKhyzhko/bookstore_utils-go/logger"
 	"github.com/joho/godotenv"
 )
@@ -34,7 +34,7 @@ func main() {
 	restyClient := users.NewRestyClient()
 	usersClient := users.NewClient(restyClient, logger, cfg.App.ApiBaseUrl)
 	atService := tokenservice.NewService(usersClient, jwtManager)
-	handler := controllers.NewHandler(atService, cfg.App.CtxTimeout)
+	handler := controllers.NewHandler(atService, cfg.App.CtxTimeout, logger)
 
-	app.StartApplication(cfg.App.GinPort, handler)
+	app.StartApplication(cfg.App.GinPort, handler, cfg.App.AppEnv)
 }

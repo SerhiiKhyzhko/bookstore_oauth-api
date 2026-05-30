@@ -15,9 +15,9 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/oauth/access_token": {
+        "/oauth/create": {
             "post": {
-                "description": "Generate and return new access token with provided information",
+                "description": "Generate and return new access and refresh tokens with provided information",
                 "consumes": [
                     "application/json"
                 ],
@@ -25,17 +25,17 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "access token"
+                    "token"
                 ],
-                "summary": "Create new access token",
+                "summary": "Create new access and refresh tokens",
                 "parameters": [
                     {
-                        "description": "Access Token Request",
+                        "description": "Token Request",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/accesstoken.AccessTokenRequest"
+                            "$ref": "#/definitions/token.TokenRequest"
                         }
                     }
                 ],
@@ -43,11 +43,23 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/accesstoken.AccessToken"
+                            "$ref": "#/definitions/token.Token"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/oauth_errors.SwaggerRestErr"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/oauth_errors.SwaggerRestErr"
+                        }
+                    },
+                    "408": {
+                        "description": "Request Timeout",
                         "schema": {
                             "$ref": "#/definitions/oauth_errors.SwaggerRestErr"
                         }
@@ -61,34 +73,45 @@ const docTemplate = `{
                 }
             }
         },
-        "/oauth/access_token/{access_token_id}": {
-            "get": {
-                "description": "Return access token using access_token_id obtained via URL",
+        "/oauth/refresh": {
+            "post": {
+                "description": "Parse refresh token and validate claims, if all is ok, generate new access token",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "access token"
+                    "token"
                 ],
-                "summary": "Get access token by its id",
+                "summary": "Generate new access token based on a refresh token",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Access Token ID",
-                        "name": "access_token_id",
-                        "in": "path",
-                        "required": true
+                        "description": "Refresh Token",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/token.RefreshToken"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/accesstoken.AccessToken"
+                            "$ref": "#/definitions/token.AccessToken"
                         }
                     },
-                    "404": {
-                        "description": "Not Found",
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/oauth_errors.SwaggerRestErr"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/oauth_errors.SwaggerRestErr"
                         }
@@ -100,9 +123,11 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
-            "patch": {
-                "description": "Set new expiration time, update db and return updated access token",
+            }
+        },
+        "/oauth/verify": {
+            "post": {
+                "description": "Parse token and validate claims, if all is ok, return claims",
                 "consumes": [
                     "application/json"
                 ],
@@ -110,24 +135,17 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "access token"
+                    "token"
                 ],
-                "summary": "Update given access token",
+                "summary": "Validate given token",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Access Token ID",
-                        "name": "access_token_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Access Token",
-                        "name": "at",
+                        "description": "Verify Request",
+                        "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/accesstoken.AccessToken"
+                            "$ref": "#/definitions/token.VerifyRequest"
                         }
                     }
                 ],
@@ -135,7 +153,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/accesstoken.AccessToken"
+                            "$ref": "#/definitions/token.TokenClaimsResponse"
                         }
                     },
                     "400": {
@@ -144,8 +162,8 @@ const docTemplate = `{
                             "$ref": "#/definitions/oauth_errors.SwaggerRestErr"
                         }
                     },
-                    "404": {
-                        "description": "Not Found",
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/oauth_errors.SwaggerRestErr"
                         }
@@ -161,48 +179,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "accesstoken.AccessToken": {
-            "type": "object",
-            "properties": {
-                "access_token": {
-                    "type": "string"
-                },
-                "client_id": {
-                    "type": "integer"
-                },
-                "expires": {
-                    "type": "integer"
-                },
-                "user_id": {
-                    "type": "integer"
-                }
-            }
-        },
-        "accesstoken.AccessTokenRequest": {
-            "type": "object",
-            "properties": {
-                "client_id": {
-                    "description": "used for client credentials grant type",
-                    "type": "string"
-                },
-                "client_secret": {
-                    "type": "string"
-                },
-                "grant_type": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                },
-                "scope": {
-                    "type": "string"
-                },
-                "username": {
-                    "description": "used for password grant type",
-                    "type": "string"
-                }
-            }
-        },
         "oauth_errors.SwaggerRestErr": {
             "type": "object",
             "properties": {
@@ -214,6 +190,76 @@ const docTemplate = `{
                 },
                 "status": {
                     "type": "integer"
+                }
+            }
+        },
+        "token.AccessToken": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "token.RefreshToken": {
+            "type": "object",
+            "properties": {
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "token.Token": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "refresh_token": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "token.TokenClaimsResponse": {
+            "type": "object",
+            "properties": {
+                "expires_at": {
+                    "type": "integer"
+                },
+                "issuer": {
+                    "type": "string"
+                },
+                "token_type": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "token.TokenRequest": {
+            "type": "object",
+            "properties": {
+                "password": {
+                    "type": "string"
+                },
+                "scope": {
+                    "type": "string"
+                },
+                "user_email": {
+                    "description": "used for password grant type",
+                    "type": "string"
+                }
+            }
+        },
+        "token.VerifyRequest": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string"
                 }
             }
         }

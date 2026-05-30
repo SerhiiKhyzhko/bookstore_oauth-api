@@ -1,6 +1,8 @@
 # Bookstore OAuth API
 
-A Go-based microservice responsible for authentication and token management within the "Bookstore" project ecosystem. It issues, refreshes, and verifies **stateless JWT tokens**, eliminating the need for any persistent token storage.
+A Go-based microservice responsible for authentication and token management within the "Bookstore" project ecosystem. It issues and refreshes **stateless JWT tokens**, eliminating the need for any persistent token storage.
+
+In production, other services (Users API, Items API) validate access tokens locally via the **`bookstore-oauth-go` SDK** — they do not call this service over HTTP for verification.
 
 > **Note:** This is version `v2`. The previous `v1.0.0` used MD5 tokens backed by Cassandra. See the `v1.0.0` tag for that implementation.
 
@@ -21,6 +23,8 @@ A Go-based microservice responsible for authentication and token management with
 - **ACL Pattern:** The `users_client` communicates with the external Users API but returns only a `userId` (`int64`) to the service layer, keeping external models out of the domain.
 - **Token Type Enforcement:** Each token carries a `token_type` claim (`"access"` or `"refresh"`). The refresh endpoint explicitly rejects access tokens, and vice versa.
 - **Algorithm Enforcement:** Token verification uses `jwt.WithValidMethods([]string{"HS256"})` to prevent algorithm confusion attacks.
+- **Production vs development routes:** Only `POST /oauth/create` and `POST /oauth/refresh` are registered when `APP_ENV` is not `development`. Swagger UI and `POST /oauth/verify` are enabled only in development for manual testing and API exploration.
+- **Microservice auth:** The `bookstore-oauth-go` SDK validates JWTs in-process (signature, expiry, claims). It does not perform HTTP calls to `/oauth/verify` on this service.
 
 ## Prerequisites
 
@@ -33,6 +37,7 @@ Create a `.env` file in the project root using the following template:
 
 ```env
 # Application
+APP_ENV=development          # Use "development" for Swagger + /oauth/verify; any other value for production-like routing
 GIN_PORT=:8081
 CTX_TIMEOUT=2s
 
@@ -71,9 +76,11 @@ REFRESH_EXPIRATION=24h        # Optional: Defaults to 24h
    go run src/main.go
    ```
 
+   Set `APP_ENV=development` in `.env` if you need Swagger and the `/oauth/verify` test endpoint locally.
+
 ## API Documentation (Swagger)
 
-Interactive API documentation is available once the service is running:
+Available only when `APP_ENV=development`. Once the service is running:
 
 ```
 http://localhost:8081/swagger/index.html
@@ -82,7 +89,7 @@ http://localhost:8081/swagger/index.html
 To regenerate Swagger docs after modifying controller annotations:
 
 ```bash
-swag init --parseDependency --parseInternal --generalInfo src/main.go --dir ./src
+swag init --parseDependency --parseInternal --generalInfo main.go --dir ./src --output ./src/docs
 ```
 
 ## Running Tests
@@ -99,11 +106,19 @@ go test -coverprofile=coverage.out ./... && go tool cover -html=coverage.out
 
 ## API Endpoints
 
-| Method | Path             | Description                                     | Auth Required |
-|--------|------------------|-------------------------------------------------|---------------|
-| `POST` | `/oauth/create`  | Authenticate user, issue access + refresh token | No            |
-| `POST` | `/oauth/refresh` | Issue new access token using a refresh token    | No            |
-| `POST` | `/oauth/verify`  | Verify a token and return its claims            | No            |
+### Always available
+
+| Method | Path             | Description                                  | Auth Required |
+|--------|------------------|----------------------------------------------|---------------|
+| `POST` | `/oauth/create`  | Authenticate user, issue access + refresh token | No         |
+| `POST` | `/oauth/refresh` | Issue new access token using a refresh token | No            |
+
+### Development only (`APP_ENV=development`)
+
+| Method | Path             | Description                                  |
+|--------|------------------|----------------------------------------------|
+| `POST` | `/oauth/verify`  | Decode and validate a JWT; return claims (manual testing) |
+| `GET`  | `/swagger/*`     | Swagger UI                                   |
 
 ### `POST /oauth/create`
 
@@ -148,15 +163,36 @@ Accepts a valid, non-expired refresh token and issues a new access token. Return
 
 ---
 
-### `POST /oauth/verify`
+### `POST /oauth/verify` (development only)
 
-Verifies any token (access or refresh) and returns its decoded claims. Used internally by other microservices via the `bookstore-oauth-go` client library.
+> **Not used in production.** Users API and Items API rely on the `bookstore-oauth-go` SDK for JWT validation and do not call this endpoint.
 
-**Request body:**
-```json
-{
-  "token": "eyJhbGci..."
-}
+Available when `APP_ENV=development`. Useful for manual checks, Swagger, and debugging token contents without running a consumer service.
+
+The token can be supplied in two ways (checked in this order):
+
+1. **`Authorization` header (preferred):**
+   ```http
+   Authorization: Bearer eyJhbGci...
+   ```
+2. **JSON body (fallback)** when the header is missing or empty:
+   ```json
+   {
+     "token": "eyJhbGci..."
+   }
+   ```
+
+**Example (Bearer):**
+```bash
+curl -X POST http://localhost:8081/oauth/verify \
+  -H "Authorization: Bearer eyJhbGci..."
+```
+
+**Example (JSON body):**
+```bash
+curl -X POST http://localhost:8081/oauth/verify \
+  -H "Content-Type: application/json" \
+  -d '{"token":"eyJhbGci..."}'
 ```
 
 **Success response `200`:**
@@ -168,6 +204,14 @@ Verifies any token (access or refresh) and returns its decoded claims. Used inte
   "expires_at": 1718000000
 }
 ```
+
+**Error responses:**
+
+| Status | When |
+|--------|------|
+| `400` | Token is missing or could not be read from the header or body (`missing or invalid token in Authorization header or request body`). Detailed causes are logged server-side. |
+| `401` | Token is present but invalid, expired, or has a bad signature. |
+| `500` | Unexpected server error during verification. |
 
 ## Token Lifecycle
 
@@ -185,4 +229,13 @@ Every protected request:
   └─ if 401 → calls POST /oauth/refresh with refresh token
      └─ if refresh valid → new access token issued
      └─ if refresh expired → 401, user must re-authenticate via POST /oauth/create
+
+Microservice token validation (Users API, Items API) — production:
+  └─ client sends Authorization: Bearer <access_token>
+  └─ bookstore-oauth-go middleware validates JWT locally (same SIGN_KEY / HS256 rules)
+  └─ claims (e.g. user_id) attached to request context → handler authorizes or rejects
+  └─ no HTTP call to oauth-api /oauth/verify
+
+Development only:
+  └─ optional POST /oauth/verify on oauth-api to inspect a token via curl or Swagger
 ```

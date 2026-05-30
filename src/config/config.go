@@ -17,6 +17,7 @@ type appConfig struct {
 	GinPort      string
 	ApiBaseUrl   string
 	CtxTimeout   time.Duration
+	AppEnv       string
 }
 
 type jwtConfig struct {
@@ -35,6 +36,7 @@ func loadApp() appConfig {
 	app.GinPort = getRequiredEnv("GIN_PORT")
 	app.ApiBaseUrl = getRequiredEnv("USERS_API_BASE_URL")
 	app.CtxTimeout = getTimeWithDefault("CTX_TIMEOUT", "2s")
+	app.AppEnv = getRequiredEnv("APP_ENV")
 	return app
 }
 

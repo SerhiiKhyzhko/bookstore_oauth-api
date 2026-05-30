@@ -1,32 +1,4 @@
 definitions:
-  accesstoken.AccessToken:
-    properties:
-      access_token:
-        type: string
-      client_id:
-        type: integer
-      expires:
-        type: integer
-      user_id:
-        type: integer
-    type: object
-  accesstoken.AccessTokenRequest:
-    properties:
-      client_id:
-        description: used for client credentials grant type
-        type: string
-      client_secret:
-        type: string
-      grant_type:
-        type: string
-      password:
-        type: string
-      scope:
-        type: string
-      username:
-        description: used for password grant type
-        type: string
-    type: object
   oauth_errors.SwaggerRestErr:
     properties:
       error:
@@ -36,102 +8,160 @@ definitions:
       status:
         type: integer
     type: object
+  token.AccessToken:
+    properties:
+      access_token:
+        type: string
+    type: object
+  token.RefreshToken:
+    properties:
+      refresh_token:
+        type: string
+    type: object
+  token.Token:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  token.TokenClaimsResponse:
+    properties:
+      expires_at:
+        type: integer
+      issuer:
+        type: string
+      token_type:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  token.TokenRequest:
+    properties:
+      password:
+        type: string
+      scope:
+        type: string
+      user_email:
+        description: used for password grant type
+        type: string
+    type: object
+  token.VerifyRequest:
+    properties:
+      token:
+        type: string
+    type: object
 info:
   contact: {}
 paths:
-  /oauth/access_token:
+  /oauth/create:
     post:
       consumes:
       - application/json
-      description: Generate and return new access token with provided information
+      description: Generate and return new access and refresh tokens with provided
+        information
       parameters:
-      - description: Access Token Request
+      - description: Token Request
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/accesstoken.AccessTokenRequest'
+          $ref: '#/definitions/token.TokenRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/accesstoken.AccessToken'
+            $ref: '#/definitions/token.Token'
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/oauth_errors.SwaggerRestErr'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/oauth_errors.SwaggerRestErr'
-      summary: Create new access token
-      tags:
-      - access token
-  /oauth/access_token/{access_token_id}:
-    get:
-      description: Return access token using access_token_id obtained via URL
-      parameters:
-      - description: Access Token ID
-        in: path
-        name: access_token_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/accesstoken.AccessToken'
         "404":
           description: Not Found
           schema:
             $ref: '#/definitions/oauth_errors.SwaggerRestErr'
+        "408":
+          description: Request Timeout
+          schema:
+            $ref: '#/definitions/oauth_errors.SwaggerRestErr'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/oauth_errors.SwaggerRestErr'
-      summary: Get access token by its id
+      summary: Create new access and refresh tokens
       tags:
-      - access token
-    patch:
+      - token
+  /oauth/refresh:
+    post:
       consumes:
       - application/json
-      description: Set new expiration time, update db and return updated access token
+      description: Parse refresh token and validate claims, if all is ok, generate
+        new access token
       parameters:
-      - description: Access Token ID
-        in: path
-        name: access_token_id
-        required: true
-        type: string
-      - description: Access Token
+      - description: Refresh Token
         in: body
-        name: at
+        name: request
         required: true
         schema:
-          $ref: '#/definitions/accesstoken.AccessToken'
+          $ref: '#/definitions/token.RefreshToken'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/accesstoken.AccessToken'
+            $ref: '#/definitions/token.AccessToken'
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/oauth_errors.SwaggerRestErr'
-        "404":
-          description: Not Found
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/oauth_errors.SwaggerRestErr'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/oauth_errors.SwaggerRestErr'
-      summary: Update given access token
+      summary: Generate new access token based on a refresh token
       tags:
-      - access token
+      - token
+  /oauth/verify:
+    post:
+      consumes:
+      - application/json
+      description: Parse token and validate claims, if all is ok, return claims
+      parameters:
+      - description: Verify Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/token.VerifyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/token.TokenClaimsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/oauth_errors.SwaggerRestErr'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/oauth_errors.SwaggerRestErr'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/oauth_errors.SwaggerRestErr'
+      summary: Validate given token
+      tags:
+      - token
 swagger: "2.0"

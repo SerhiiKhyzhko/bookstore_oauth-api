@@ -3,7 +3,7 @@ package token
 import (
 	"fmt"
 
-	"github.com/SerhiiKhyzhko/bookstore_oauth-api/src/oauth_errors"
+	"github.com/SerhiiKhyzhko/bookstore_oauth-api/v2/src/oauth_errors"
 )
 
 type TokenRequest struct {

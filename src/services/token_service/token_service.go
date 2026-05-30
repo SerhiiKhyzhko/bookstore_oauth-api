@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/SerhiiKhyzhko/bookstore_oauth-api/src/domain/token"
-	"github.com/SerhiiKhyzhko/bookstore_oauth-api/src/internal/jwtutil"
-	"github.com/SerhiiKhyzhko/bookstore_oauth-api/src/oauth_errors"
+	"github.com/SerhiiKhyzhko/bookstore_oauth-api/v2/src/domain/token"
+	"github.com/SerhiiKhyzhko/bookstore_oauth-api/v2/src/internal/jwtutil"
+	"github.com/SerhiiKhyzhko/bookstore_oauth-api/v2/src/oauth_errors"
 )
 
 type Service interface {

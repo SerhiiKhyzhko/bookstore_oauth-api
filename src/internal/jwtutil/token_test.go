@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
  
-	"github.com/SerhiiKhyzhko/bookstore_oauth-api/src/oauth_errors"
+	"github.com/SerhiiKhyzhko/bookstore_oauth-api/v2/src/oauth_errors"
 	"github.com/SerhiiKhyzhko/bookstore_utils-go/logger"
 	"github.com/stretchr/testify/assert"
 )

@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/SerhiiKhyzhko/bookstore_oauth-api/src/oauth_errors"
-	servicetoken "github.com/SerhiiKhyzhko/bookstore_oauth-api/src/services/token_service"
+	"github.com/SerhiiKhyzhko/bookstore_oauth-api/v2/src/oauth_errors"
+	servicetoken "github.com/SerhiiKhyzhko/bookstore_oauth-api/v2/src/services/token_service"
 	"github.com/SerhiiKhyzhko/bookstore_utils-go/logger"
 	"github.com/go-resty/resty/v2"
 )

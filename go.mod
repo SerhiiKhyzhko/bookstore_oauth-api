@@ -1,4 +1,4 @@
-module github.com/SerhiiKhyzhko/bookstore_oauth-api
+module github.com/SerhiiKhyzhko/bookstore_oauth-api/v2
 
 go 1.25.0
 
